@@ -18,8 +18,13 @@ export type Competitor = {
 };
 
 export type Match = {
+  id: string;
   a: Competitor | null;
   b: Competitor | null;
+  scoreA: number;
+  scoreB: number;
+  winner?: Competitor | null;
+
 };
 
 type Theme = {
@@ -314,7 +319,7 @@ const ShareModal: FC<{ showModal: boolean; onClose: () => void; champion: Compet
   );
 }
 
-const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion: Competitor | null; onCompetitorChange: (roundIndex: number, matchIndex: number, competitorKey: 'a' | 'b', field: 'name' | 'subtitle', value: string) => void; onWinnerSelect: (roundIndex: number, matchIndex: number, winner: Competitor) => void; matchWidth: number; matchHeight: number; hGap: number; vGap: number; }> = ({ rounds, winners, champion, onCompetitorChange, onWinnerSelect, matchWidth, matchHeight, hGap, vGap }) => {
+const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion: Competitor | null; onCompetitorChange: (roundIndex: number, matchIndex: number, competitorKey: 'a' | 'b', field: 'name' | 'subtitle', value: string) => void; onWinnerSelect: (roundIndex: number, matchIndex: number, winner: Competitor, scoreA: number, scoreB: number) => void; matchWidth: number; matchHeight: number; hGap: number; vGap: number; }> = ({ rounds, winners, champion, onCompetitorChange, onWinnerSelect, matchWidth, matchHeight, hGap, vGap }) => {
   const [selectedMatch, setSelectedMatch] = useState<{ roundIndex: number, matchIndex: number, match: Match } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -372,7 +377,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
   const MatchDetailModal: FC<{
     selectedMatch: { roundIndex: number, matchIndex: number, match: Match } | null;
     onClose: () => void;
-    onWinnerSelect: (roundIndex: number, matchIndex: number, winner: Competitor) => void;
+    onWinnerSelect: (roundIndex: number, matchIndex: number, winner: Competitor, scoreA: number, scoreB: number) => void;
   }> = ({ selectedMatch, onClose, onWinnerSelect }) => {
     const [competitorAScore, setCompetitorAScore] = useState(0);
     const [competitorBScore, setCompetitorBScore] = useState(0);
@@ -385,8 +390,8 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
 
     useEffect(() => {
       if (selectedMatch) {
-        setCompetitorAScore(selectedMatch.match.a?.score || 0);
-        setCompetitorBScore(selectedMatch.match.b?.score || 0);
+        setCompetitorAScore(selectedMatch.match.scoreA || 0);
+        setCompetitorBScore(selectedMatch.match.scoreB || 0);
         setTimeLeft(timerDuration);
         setIsTimerRunning(false);
         setIsTimerExpired(false);
@@ -437,8 +442,8 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
         competitorBScore > competitorAScore ? winnerB :
           Math.random() > 0.5 ? winnerA : winnerB; 
 
-      onWinnerSelect(roundIndex, matchIndex, winner);
-      onClose();
+        onWinnerSelect(roundIndex, matchIndex, winner, competitorAScore, competitorBScore);
+        onClose();
     };
 
     const handleTimerControl = () => {
@@ -576,7 +581,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
                   transition={{ delay: 1, duration: 0.6 }}
                   className="text-2xl md:text-3xl text-white mt-4 font-semibold"
                 >
-                  Match Time Expired
+                  ¡DETENGAN LA PELEA!
                 </motion.p>
               </motion.div>
             </div>
@@ -942,7 +947,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
   );
 };
 
-const BracketPage: FC<{ rounds: Match[][]; winners: Competitor[][]; champion: Competitor | null; onCompetitorChange: (roundIndex: number, matchIndex: number, competitorKey: 'a' | 'b', field: 'name' | 'subtitle', value: string) => void; onWinnerSelect: (roundIndex: number, matchIndex: number, winner: Competitor) => void; matchWidth: number; matchHeight: number; hGap: number; vGap: number; }> = ({ rounds, winners, onCompetitorChange, onWinnerSelect, matchWidth, matchHeight, hGap, vGap }) => {
+const BracketPage: FC<{ rounds: Match[][]; winners: Competitor[][]; champion: Competitor | null; onCompetitorChange: (roundIndex: number, matchIndex: number, competitorKey: 'a' | 'b', field: 'name' | 'subtitle', value: string) => void; onWinnerSelect: (roundIndex: number, matchIndex: number, winner: Competitor, scoreA: number, scoreB: number) => void; matchWidth: number; matchHeight: number; hGap: number; vGap: number; }> = ({ rounds, winners, onCompetitorChange, onWinnerSelect, matchWidth, matchHeight, hGap, vGap }) => {
   const [isShareModalOpen, setShareModalOpen] = useState(false);
   const champion = winners.length > 0 ? winners[winners.length - 1]?.[0] || null : null;
 
@@ -966,8 +971,28 @@ const generateBracketData = (competitors: Competitor[], isManual = false): { rou
   const allRounds: Match[][] = [];
   const allWinners: Competitor[][] = [];
   const round1Matches: Match[] = [];
-  for (let i = 0; i < players.length; i += 2) { round1Matches.push({ a: players[i], b: players[i + 1] }); }
-  if (byePlayer) { round1Matches.push({ a: byePlayer, b: null }); }
+  
+  for (let i = 0; i < players.length; i += 2) { 
+    round1Matches.push({ 
+      id: `match_${Date.now()}_${i}`,
+      a: players[i], 
+      b: players[i + 1],
+      scoreA: 0,
+      scoreB: 0
+    }); 
+  }
+  
+  if (byePlayer) { 
+    round1Matches.push({ 
+      id: `match_bye_${Date.now()}`,
+      a: byePlayer, 
+      b: null,
+      scoreA: 0,
+      scoreB: 0,
+      winner: byePlayer
+    }); 
+  }
+  
   allRounds.push(round1Matches);
   const round1Winners = round1Matches.map(match => {
     if (match.a && !match.b) return match.a;
@@ -975,28 +1000,52 @@ const generateBracketData = (competitors: Competitor[], isManual = false): { rou
     return null;
   }).filter((c): c is Competitor => c !== null);
   allWinners.push(round1Winners);
+  
   if (!isManual) {
     let currentPlayers = round1Winners;
     while (currentPlayers.length > 1) {
-      const nextRoundMatches: Match[] = []; const nextRoundWinners: Competitor[] = [];
+      const nextRoundMatches: Match[] = []; 
+      const nextRoundWinners: Competitor[] = [];
+      
       for (let i = 0; i < currentPlayers.length; i += 2) {
-        const match = { a: currentPlayers[i], b: currentPlayers[i + 1] ?? null };
+        const match: Match = { 
+          id: `match_${Date.now()}_${i}_round`,
+          a: currentPlayers[i], 
+          b: currentPlayers[i + 1] ?? null,
+          scoreA: 0,
+          scoreB: 0
+        };
         nextRoundMatches.push(match);
         if (match.a) {
-          if (!match.b) { nextRoundWinners.push(match.a); }
-          else { nextRoundWinners.push(Math.random() > 0.5 ? match.a : match.b); }
+          if (!match.b) { 
+            nextRoundWinners.push(match.a); 
+          } else { 
+            const winner = Math.random() > 0.5 ? match.a : match.b;
+            match.winner = winner;
+            nextRoundWinners.push(winner);
+          }
         }
       }
-      allRounds.push(nextRoundMatches); allWinners.push(nextRoundWinners); currentPlayers = nextRoundWinners;
+      allRounds.push(nextRoundMatches); 
+      allWinners.push(nextRoundWinners); 
+      currentPlayers = nextRoundWinners;
     }
   } else {
     let lastRoundMatchCount = round1Matches.length;
     while (lastRoundMatchCount > 1) {
       const nextRoundSize = Math.ceil(lastRoundMatchCount / 2);
-      allRounds.push(Array.from({ length: nextRoundSize }, () => ({ a: null, b: null })));
+      const nextRoundMatches = Array.from({ length: nextRoundSize }, (_, i) => ({ 
+        id: `match_empty_${Date.now()}_${i}`,
+        a: null, 
+        b: null,
+        scoreA: 0,
+        scoreB: 0
+      }));
+      allRounds.push(nextRoundMatches);
       allWinners.push([]);
       lastRoundMatchCount = nextRoundSize;
     }
+    
     for (let r = 0; r < allRounds.length - 1; r++) {
       allWinners[r].forEach(winner => {
         const originalMatchIndex = allRounds[r].findIndex(m => m.a?.id === winner.id || m.b?.id === winner.id);
@@ -1004,14 +1053,21 @@ const generateBracketData = (competitors: Competitor[], isManual = false): { rou
           const nextMatchIndex = Math.floor(originalMatchIndex / 2);
           const nextSlot = originalMatchIndex % 2 === 0 ? 'a' : 'b';
           const nextRound = allRounds[r + 1];
-          if (nextRound?.[nextMatchIndex]) { nextRound[nextMatchIndex][nextSlot] = winner; }
+          if (nextRound?.[nextMatchIndex]) { 
+            nextRound[nextMatchIndex][nextSlot] = winner; 
+          }
         }
       });
+      
       const nextRound = allRounds[r + 1];
       if (nextRound) {
         nextRound.forEach(match => {
-          if (match.a && !match.b && !allWinners[r + 1].some(w => w.id === match.a!.id)) { allWinners[r + 1].push(match.a); }
-          if (!match.a && match.b && !allWinners[r + 1].some(w => w.id === match.b!.id)) { allWinners[r + 1].push(match.b); }
+          if (match.a && !match.b && !allWinners[r + 1].some(w => w.id === match.a!.id)) { 
+            allWinners[r + 1].push(match.a); 
+          }
+          if (!match.a && match.b && !allWinners[r + 1].some(w => w.id === match.b!.id)) { 
+            allWinners[r + 1].push(match.b); 
+          }
         });
       }
     }
@@ -1033,7 +1089,7 @@ const App: FC = () => {
   const [vGap, setVGap] = useState(25);
   const [isCompetitorListOpen, setIsCompetitorListOpen] = useState(false); // Nuevo estado
   const MAX_COMPETITORS = 1024;
-
+  const TOURNAMENT_ID = 'eiri-2025';
   
 
     useEffect(() => {
@@ -1047,23 +1103,97 @@ const App: FC = () => {
         
         if (data.success && data.competitors.length > 0) {
           setCompetitors(data.competitors);
-          setBracketData(generateBracketData(data.competitors, true));
+          const generated = generateBracketData(data.competitors, true); 
+          const saved = await loadMatchesFromMongo();
+          console.log(saved)
+          if (saved.length) {
+            mergeSavedMatchesByPosition(saved, generated.rounds);
+          }
+          setBracketData(generated);
+        } else {
+          setBracketData(null);
         }
       } catch (error) {
         console.error('Error loading competitors:', error);
       } finally {
-        setIsLoading(false); // Finalizar loading
+        setIsLoading(false);
       }
     };
-    
     loadCompetitors();
   }, []);
 
-  const handleGenerateBracket = () => {
+  const handleGenerateBracket = async () => {
     setIsGenerating(true);
     setIsLoading(true);
-    setBracketData(competitors.length > 1 ? generateBracketData(competitors, mode === 'manual') : null);
-    setTimeout(() => {setIsGenerating(false); setIsLoading(false);}, 1200);
+    await resetMatchesForTournament();
+    const generated = competitors.length > 1 ? generateBracketData(competitors, mode === 'manual') : null;
+    setBracketData(generated);
+    if (generated) {
+      await saveMatchesToMongo(generated.rounds);
+    }
+    setTimeout(() => { setIsGenerating(false); setIsLoading(false); }, 1200);
+  };
+
+  // MATCHES
+  const resetMatchesForTournament = async () => {
+    try {
+      await fetch(`/api/matches?tournamentId=${encodeURIComponent(TOURNAMENT_ID)}`, { method: 'DELETE' });
+    } catch (e) {
+      console.error('Failed to reset matches', e);
+    }
+  };
+  const saveMatchesToMongo = async (matches: Match[][]) => {
+    try {
+      const flatMatches = matches.flatMap((round, r) =>
+        round.map((m, i) => ({
+          ...m,
+          roundIndex: r,
+          matchIndex: i,
+          tournamentId: TOURNAMENT_ID,
+        }))
+      );
+      const response = await fetch('/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matches: flatMatches })
+      });
+      const data = await response.json();
+      if (!data.success) console.error('Failed to save matches:', data.error);
+    } catch (error) {
+      console.error('Error saving matches:', error);
+    }
+  };
+  
+  const loadMatchesFromMongo = async () => {
+    try {
+      const response = await fetch(`/api/matches?tournamentId=${encodeURIComponent(TOURNAMENT_ID)}`);
+      const data = await response.json();
+      if (data.success) {
+        return data.matches || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error loading matches:', error);
+      return [];
+    }
+  };
+
+  const mergeSavedMatchesByPosition = (saved: any[], rounds: Match[][]) => {
+    for (const s of saved) {
+      if (
+        typeof s.roundIndex === 'number' &&
+        typeof s.matchIndex === 'number' &&
+        rounds[s.roundIndex] &&
+        rounds[s.roundIndex][s.matchIndex]
+      ) {
+        const m = rounds[s.roundIndex][s.matchIndex];
+        m.a = s.a ?? m.a;
+        m.b = s.b ?? m.b;
+        m.scoreA = s.scoreA ?? m.scoreA;
+        m.scoreB = s.scoreB ?? m.scoreB;
+        m.winner = s.winner ?? m.winner;
+      }
+    }
   };
   // Agregar después de las constantes MAX_COMPETITORS
   const saveCompetitorsToMongo = async (competitorsToSave: Competitor[]) => {
@@ -1140,11 +1270,18 @@ const App: FC = () => {
       setBracketData({ rounds: newRounds, winners: newWinners });
     }
   };
-  const handleWinnerSelect = (roundIndex: number, matchIndex: number, winner: Competitor) => {
+  const handleWinnerSelect = async (roundIndex: number, matchIndex: number, winner: Competitor, scoreA: number, scoreB: number) => {
     if (!bracketData || mode === 'random') return;
     let newRounds = JSON.parse(JSON.stringify(bracketData.rounds)) as Match[][];
     let newWinners = JSON.parse(JSON.stringify(bracketData.winners)) as Competitor[][];
+    
+    newRounds[roundIndex][matchIndex].scoreA = scoreA;
+    newRounds[roundIndex][matchIndex].scoreB = scoreB;
+    newRounds[roundIndex][matchIndex].winner = winner;
     const match = newRounds[roundIndex][matchIndex];
+    
+   
+    
     const clearFutureProgression = (currentRound: number, currentMatchIdx: number) => {
       if (currentRound + 1 >= newRounds.length) return;
       const nextMatchIndex = Math.floor(currentMatchIdx / 2);
@@ -1156,16 +1293,20 @@ const App: FC = () => {
         clearFutureProgression(currentRound + 1, nextMatchIndex);
       }
     };
+    
     clearFutureProgression(roundIndex, matchIndex);
     newWinners[roundIndex] = newWinners[roundIndex].filter((w: Competitor) => w.id !== match.a?.id && w.id !== match.b?.id);
     newWinners[roundIndex].push(winner);
+    
     for (let r = roundIndex; r < newRounds.length - 1; r++) {
-      const currentWinnersInRound = newWinners[r]; const nextRound = newRounds[r + 1]; const nextWinnersInRound = newWinners[r + 1];
+      const currentWinnersInRound = newWinners[r];
+      const nextRound = newRounds[r + 1];
+      const nextWinnersInRound = newWinners[r + 1];
       currentWinnersInRound.forEach(w => {
         const mi = newRounds[r].findIndex(m => m.a?.id === w.id || m.b?.id === w.id);
         if (mi !== -1) {
-          const nmi = Math.floor(mi / 2), ns = mi % 2 === 0 ? 'a' : 'b';
-          if (nextRound?.[nmi]) { nextRound[nmi][ns] = w; }
+          const nmi = Math.floor(mi / 2), ns: 'a' | 'b' = mi % 2 === 0 ? 'a' : 'b';
+          if (nextRound?.[nmi]) nextRound[nmi][ns] = w;
         }
       });
       if (nextRound) {
@@ -1176,6 +1317,8 @@ const App: FC = () => {
       }
     }
     setBracketData({ rounds: newRounds, winners: newWinners });
+    await saveMatchesToMongo(newRounds);
+
   };
 
   const primaryBtnClasses = "flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-2 px-5 rounded-lg transition-all shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none";
