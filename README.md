@@ -15,6 +15,6 @@ Con este proyecto podremos organizar y hacer un seguimiento de los enfrentamient
 - Hacer un seguimiento de la llave de enfrentamientos, registrando ganadores y perdedores en cada etapa.
 - Destacar al ganador al final de la competición.
 
-### Aclaraciones
+## Aclaraciones
 
 Este proyecto está inspirado en: https://github.com/Inaciocb/simple-beautiful-bracket-demo
