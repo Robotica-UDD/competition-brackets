@@ -1026,6 +1026,7 @@ const App: FC = () => {
   const [newCompetitorSubtitle, setNewCompetitorSubtitle] = useState("");
   const [mode, setMode] = useState<'random' | 'manual'>('manual');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [matchWidth, setMatchWidth] = useState(310);
   const [matchHeight, setMatchHeight] = useState(150);
   const [hGap, setHGap] = useState(80);
@@ -1037,6 +1038,8 @@ const App: FC = () => {
 
     useEffect(() => {
     const loadCompetitors = async () => {
+      setIsLoading(true); // Iniciar loading
+
       try {
         // Cambiar a la API route
         const response = await fetch('/api');
@@ -1048,6 +1051,8 @@ const App: FC = () => {
         }
       } catch (error) {
         console.error('Error loading competitors:', error);
+      } finally {
+        setIsLoading(false); // Finalizar loading
       }
     };
     
@@ -1056,8 +1061,9 @@ const App: FC = () => {
 
   const handleGenerateBracket = () => {
     setIsGenerating(true);
+    setIsLoading(true);
     setBracketData(competitors.length > 1 ? generateBracketData(competitors, mode === 'manual') : null);
-    setTimeout(() => setIsGenerating(false), 1200);
+    setTimeout(() => {setIsGenerating(false); setIsLoading(false);}, 1200);
   };
   // Agregar después de las constantes MAX_COMPETITORS
   const saveCompetitorsToMongo = async (competitorsToSave: Competitor[]) => {
@@ -1189,75 +1195,75 @@ const App: FC = () => {
 
         <div className="absolute  top-0 left-0 w-full h-full bg-[radial-gradient(#C7C7C740_2px,transparent_1px)] [background-size:32px_32px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_50%,transparent_100%)]"></div>
 
-
-        <main className="font-sans">
-          <AnimatePresence>
+      
+      <main className="font-sans">
+        <AnimatePresence>
             {bracketData && bracketData.rounds.length > 0 ? (
-              <BracketPage {...{ rounds: bracketData.rounds, winners: bracketData.winners, champion: bracketData.winners[bracketData.winners.length - 1]?.[0] || null, onCompetitorChange: handleCompetitorChangeInBracket, onWinnerSelect: handleWinnerSelect, matchWidth, matchHeight, hGap, vGap }} />
+            <BracketPage {...{rounds: bracketData.rounds, winners: bracketData.winners, champion: bracketData.winners[bracketData.winners.length - 1]?.[0] || null, onCompetitorChange: handleCompetitorChangeInBracket, onWinnerSelect: handleWinnerSelect, matchWidth, matchHeight, hGap, vGap}} />
             ) : (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-10 text-slate-500">Add at least two competitors to generate a bracket.</motion.div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-10 text-slate-500">Add at least two competitors to generate a bracket.</motion.div>
             )}
-          </AnimatePresence>
-        </main>
-        <div className="relative max-w-7xl mx-auto p-4 sm:p-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-2xl">
-            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-              <button
-                onClick={() => setIsCompetitorListOpen(!isCompetitorListOpen)}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-              >
-                <h2 className="text-2xl font-bold">Competitor List ({competitors.length})</h2>
-                <motion.div
-                  animate={{ rotate: isCompetitorListOpen ? 180 : 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </motion.div>
-              </button>
-              <div className="flex items-center gap-2 p-1 bg-slate-700/80 rounded-lg border border-slate-600">
-                <button onClick={() => setMode('random')} className={`px-4 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${mode === 'random' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-600/50'}`}><Zap size={16} /> Random</button>
-                <button onClick={() => setMode('manual')} className={`px-4 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${mode === 'manual' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-600/50'}`}><PenSquare size={16} /> Manual</button>
-              </div>
-            </div>
-
-            <motion.div
-              initial={false}
-              animate={{
-                height: isCompetitorListOpen ? "auto" : 0,
-                opacity: isCompetitorListOpen ? 1 : 0
-              }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              style={{ overflow: "hidden" }}
+        </AnimatePresence>
+      </main>
+      <div className="relative max-w-7xl mx-auto p-4 sm:p-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-2xl">
+          <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+            <button 
+              onClick={() => setIsCompetitorListOpen(!isCompetitorListOpen)}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <AnimatePresence>
-                  {competitors.map((competitor) => (
-                    <motion.div layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} key={competitor.id} className="flex items-center bg-slate-700/50 p-2 rounded-lg gap-3 border border-transparent hover:border-slate-600 transition-colors duration-200">
-                      <label title="Click to upload image" className="cursor-pointer group relative flex-shrink-0">
-                        <img src={competitor.images?.[0]?.url ?? placeholderImgUrl} alt={competitor.name} width={40} height={40} className="rounded-md object-cover transition-opacity group-hover:opacity-70" />
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><UploadCloud size={20} /></div>
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(competitor.id, e.target.files[0])} />
-                      </label>
-                      <div className="flex-grow">
-                        <input type="text" value={competitor.name} onChange={(e) => handleEditCompetitorInList(competitor.id, 'name', e.target.value)} className="bg-transparent text-white w-full focus:outline-none text-sm font-semibold" placeholder="Name..." />
-                        <input type="text" value={competitor.subtitle ?? ''} onChange={(e) => handleEditCompetitorInList(competitor.id, 'subtitle', e.target.value)} className="bg-transparent text-slate-400 w-full focus:outline-none text-xs" placeholder="Subtitle..." />
-                      </div>
-                      <button onClick={() => handleRemoveCompetitor(competitor.id)} className="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0 p-1">
-                        <Trash2 size={18} />
-                      </button>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 mb-6 items-end">
-                <input type="text" value={newCompetitorName} onChange={(e) => setNewCompetitorName(e.target.value)} className={inputClasses} placeholder="New competitor name..." />
-                <input type="text" value={newCompetitorSubtitle} onChange={(e) => setNewCompetitorSubtitle(e.target.value)} className={inputClasses} placeholder="Subtitle..." />
-              </div>
-              <div className="flex flex-wrap gap-4 justify-between border-t border-slate-700 pt-6">
-                <button onClick={handleAddCompetitor} className={primaryBtnClasses}><PlusCircle size={20} /> Add Competitor </button>
-                <button onClick={handleGenerateBracket} disabled={isGenerating} className={`${primaryBtnClasses} ${isGenerating ? 'bg-gradient-to-r from-green-500 to-teal-500' : ''}`}>
+              <h2 className="text-2xl font-bold">Competitor List ({competitors.length})</h2>
+              <motion.div
+                animate={{ rotate: isCompetitorListOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </motion.div>
+            </button>
+            <div className="flex items-center gap-2 p-1 bg-slate-700/80 rounded-lg border border-slate-600">
+              <button onClick={() => setMode('random')} className={`px-4 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${mode === 'random' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-600/50'}`}><Zap size={16}/> Random</button>
+              <button onClick={() => setMode('manual')} className={`px-4 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${mode === 'manual' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-600/50'}`}><PenSquare size={16}/> Manual</button>
+            </div>
+          </div>
+          
+          <motion.div
+            initial={false}
+            animate={{
+              height: isCompetitorListOpen ? "auto" : 0,
+              opacity: isCompetitorListOpen ? 1 : 0
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <AnimatePresence>
+              {competitors.map((competitor) => (
+                <motion.div layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} key={competitor.id} className="flex items-center bg-slate-700/50 p-2 rounded-lg gap-3 border border-transparent hover:border-slate-600 transition-colors duration-200">
+                  <label title="Click to upload image" className="cursor-pointer group relative flex-shrink-0">
+                    <img src={competitor.images?.[0]?.url ?? placeholderImgUrl} alt={competitor.name} width={40} height={40} className="rounded-md object-cover transition-opacity group-hover:opacity-70" />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><UploadCloud size={20} /></div>
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(competitor.id, e.target.files[0])} />
+                  </label>
+                  <div className="flex-grow">
+                    <input type="text" value={competitor.name} onChange={(e) => handleEditCompetitorInList(competitor.id, 'name', e.target.value)} className="bg-transparent text-white w-full focus:outline-none text-sm font-semibold" placeholder="Name..."/>
+                    <input type="text" value={competitor.subtitle ?? ''} onChange={(e) => handleEditCompetitorInList(competitor.id, 'subtitle', e.target.value)} className="bg-transparent text-slate-400 w-full focus:outline-none text-xs" placeholder="Subtitle..."/>
+                  </div>
+                  <button onClick={() => handleRemoveCompetitor(competitor.id)} className="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0 p-1">
+                    <Trash2 size={18} />
+                  </button>
+                </motion.div>
+              ))}
+              </AnimatePresence>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4 mb-6 items-end">
+               <input type="text" value={newCompetitorName} onChange={(e) => setNewCompetitorName(e.target.value)} className={inputClasses} placeholder="New competitor name..." />
+               <input type="text" value={newCompetitorSubtitle} onChange={(e) => setNewCompetitorSubtitle(e.target.value)} className={inputClasses} placeholder="Subtitle..."/>
+            </div>
+            <div className="flex flex-wrap gap-4 justify-between border-t border-slate-700 pt-6">
+              <button onClick={handleAddCompetitor} className={primaryBtnClasses}><PlusCircle size={20} /> Add Competitor </button>
+              <button onClick={handleGenerateBracket} disabled={isGenerating} className={`${primaryBtnClasses} ${isGenerating ? 'bg-gradient-to-r from-green-500 to-teal-500' : ''}`}>
                   <AnimatePresence mode="wait">
                       <motion.span key={isGenerating ? 'generating' : 'idle'} initial={{opacity:0, y: -10}} animate={{opacity:1, y: 0}} exit={{opacity:0, y: 10}} transition={{duration:0.2}} className="flex items-center gap-2">
                           {isGenerating ? <><CheckCircle size={20}/> Generated!</> : <><RefreshCw size={20}/> Generate Bracket and Save</>}
