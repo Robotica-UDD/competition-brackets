@@ -15,7 +15,6 @@ export type Competitor = {
   subtitle?: string;
   images?: { url: string }[];
   score?: number;
-  score?: number;
 };
 
 export type Match = {
