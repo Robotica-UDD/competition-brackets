@@ -17,7 +17,7 @@ export async function GET() {
     const database = client.db('bracket_competition');
     const collection = database.collection('competitors');
 
-    const competitors = await collection.findOne({ _id: 0 });
+    const competitors = await collection.findOne({ _id: new ObjectId('21813C39A073FEE8C4A8C5CB') });
 
     return NextResponse.json({
       success: true,
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const collection = database.collection('competitors');
     
     await collection.updateOne(
-      { _id: 0 },
+      { _id: new ObjectId('21813C39A073FEE8C4A8C5CB') },
       { $set: { data: competitors, updatedAt: new Date() } },
       { upsert: true }
     );
