@@ -1,6 +1,6 @@
 # Organizador de Competiciones EIRI
 
-Realizado en el contexto de el primer equipo de robótica UDD, donde el objetivo es que los alumnos creen su propio robot futbolista.
+Realizado en el contexto del primer taller organizado por el Equipo de Robótica UDD, donde el objetivo es que los alumnos creen su propio robot futbolista.
 
 # Competition Brackets for EIRI
 
