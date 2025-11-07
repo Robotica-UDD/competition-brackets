@@ -906,13 +906,13 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
             const pos = positions[`${r}-${i}`]; if (!pos) return null;
             const winnerId = getWinnerId(match, r);
             const renderCompetitor = (competitor: Competitor | null, isWinner: boolean, competitorKey: 'a' | 'b') => (
-              <div onClick={() => competitor && match.a && match.b && onWinnerSelect(r, i, competitor)} className={`group w-full rounded-md transition-all duration-200 ${isWinner ? 'bg-blue-500/20' : 'hover:bg-slate-700/50 cursor-pointer'}`}>
+              <div onClick={() => competitor && match.a && match.b} className={`group w-full rounded-md transition-all duration-200 ${isWinner ? 'bg-blue-500/20' : ''}`}>
                 <div className="flex items-center gap-3 w-full p-2">
                   {competitor ? <>
                     <img src={competitor.images?.[0]?.url ?? placeholderImgUrl} alt={competitor.name} width={36} height={36} className="rounded-md flex-shrink-0 object-cover" />
                     <div className="w-full overflow-hidden">
-                      <input type="text" value={competitor.name} onChange={(e) => onCompetitorChange(r, i, competitorKey, 'name', e.target.value)} className="text-sm truncate bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -mx-1" />
-                      <input type="text" value={competitor.subtitle ?? ''} onChange={(e) => onCompetitorChange(r, i, competitorKey, 'subtitle', e.target.value)} className="text-xs truncate bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -mx-1 opacity-60 mt-1" placeholder="Subtitle..." />
+                      <p>{competitor.name}</p>
+                      <p className="text-xs truncate bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -mx-1 opacity-60 mt-1">{competitor.subtitle ?? 'Subtitle...'}</p>
                     </div>
                   </> : <p className="opacity-50 text-sm p-1">-</p>}
                 </div>
