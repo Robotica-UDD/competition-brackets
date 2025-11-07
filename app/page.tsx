@@ -6,7 +6,8 @@ import { Crown, Share, X, Download, Image as ImageIcon, Eye, EyeOff, Droplets, T
 import { toPng } from 'html-to-image';
 import { createRoot } from 'react-dom/client';
 import { match } from 'assert';
-
+import { NextResponse } from 'next/server';
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
 export type Competitor = {
   id: string;
@@ -502,15 +503,25 @@ const App: FC = () => {
   const [isCompetitorListOpen, setIsCompetitorListOpen] = useState(false); // Nuevo estado
   const MAX_COMPETITORS = 1024;
 
+  
 
-
-  useEffect(() => {
-    const initialCompetitors = Array.from({ length: 10 }, (_, i) => ({
-      id: `competitor_${i + 1}`, name: `Competitor ${i + 1}`, subtitle: `Subtitle for ${i + 1}`,
-      images: [{ url: `https://placehold.co/200x200/4f46e5/ffffff?text=${i+1}` }],
-    }));
-    setCompetitors(initialCompetitors);
-    setBracketData(generateBracketData(initialCompetitors, true));
+    useEffect(() => {
+    const loadCompetitors = async () => {
+      try {
+        // Cambiar a la API route
+        const response = await fetch('/api');
+        const data = await response.json();
+        
+        if (data.success && data.competitors.length > 0) {
+          setCompetitors(data.competitors);
+          setBracketData(generateBracketData(data.competitors, true));
+        }
+      } catch (error) {
+        console.error('Error loading competitors:', error);
+      }
+    };
+    
+    loadCompetitors();
   }, []);
 
   const handleGenerateBracket = () => {
@@ -518,22 +529,57 @@ const App: FC = () => {
     setBracketData(competitors.length > 1 ? generateBracketData(competitors, mode === 'manual') : null);
     setTimeout(() => setIsGenerating(false), 1200);
   };
-  const handleAddCompetitor = () => {
+  // Agregar después de las constantes MAX_COMPETITORS
+  const saveCompetitorsToMongo = async (competitorsToSave: Competitor[]) => {
+    try {
+      const response = await fetch('/api', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ competitors: competitorsToSave })
+      });
+      const data = await response.json();
+      if (!data.success) console.error('Failed to save:', data.error);
+    } catch (error) {
+      console.error('Error saving competitors:', error);
+    }
+  };
+
+  const handleAddCompetitor = async () => {
     if (newCompetitorName.trim() === "" || competitors.length >= MAX_COMPETITORS) return;
     const newCompetitor: Competitor = {
-      id: `competitor_${Date.now()}`, name: newCompetitorName.trim(), subtitle: newCompetitorSubtitle.trim(),
+      id: `competitor_${Date.now()}`, 
+      name: newCompetitorName.trim(), 
+      subtitle: newCompetitorSubtitle.trim(),
       images: [{ url: `https://placehold.co/200x200/4f46e5/ffffff?text=${competitors.length + 1}` }],
     };
-    setCompetitors([...competitors, newCompetitor]);
-    setNewCompetitorName(""); setNewCompetitorSubtitle("");
+    
+    const updated = [...competitors, newCompetitor];
+    setCompetitors(updated);
+    setNewCompetitorName(""); 
+    setNewCompetitorSubtitle("");
+    
+    await saveCompetitorsToMongo(updated);
   };
-  const handleEditCompetitorInList = (id: string, field: 'name' | 'subtitle', value: string) => {
-    setCompetitors(competitors.map(c => c.id === id ? { ...c, [field]: value } : c));
+
+  const handleRemoveCompetitor = async (id: string) => { 
+    const updated = competitors.filter(c => c.id !== id);
+    setCompetitors(updated);
+    await saveCompetitorsToMongo(updated);
   };
-  const handleRemoveCompetitor = (id: string) => { setCompetitors(competitors.filter(c => c.id !== id)); };
-  const handleImageUpload = (id: string, file: File) => {
+
+  const handleEditCompetitorInList = async (id: string, field: 'name' | 'subtitle', value: string) => {
+    const updated = competitors.map(c => c.id === id ? { ...c, [field]: value } : c);
+    setCompetitors(updated);
+    await saveCompetitorsToMongo(updated);
+  };
+
+  const handleImageUpload = async (id: string, file: File) => {
     const reader = new FileReader();
-    reader.onload = (e) => setCompetitors(competitors.map(c => c.id === id ? { ...c, images: [{ url: e.target?.result as string }] } : c));
+    reader.onload = async (e) => {
+      const updated = competitors.map(c => c.id === id ? { ...c, images: [{ url: e.target?.result as string }] } : c);
+      setCompetitors(updated);
+      await saveCompetitorsToMongo(updated);
+    };
     reader.readAsDataURL(file);
   };
   const handleCompetitorChangeInBracket = (roundIndex: number, matchIndex: number, competitorKey: 'a' | 'b', field: 'name' | 'subtitle', value: string) => {
@@ -684,7 +730,7 @@ const App: FC = () => {
               <button onClick={handleGenerateBracket} disabled={isGenerating} className={`${primaryBtnClasses} ${isGenerating ? 'bg-gradient-to-r from-green-500 to-teal-500' : ''}`}>
                   <AnimatePresence mode="wait">
                       <motion.span key={isGenerating ? 'generating' : 'idle'} initial={{opacity:0, y: -10}} animate={{opacity:1, y: 0}} exit={{opacity:0, y: 10}} transition={{duration:0.2}} className="flex items-center gap-2">
-                          {isGenerating ? <><CheckCircle size={20}/> Generated!</> : <><RefreshCw size={20}/> Generate Bracket</>}
+                          {isGenerating ? <><CheckCircle size={20}/> Generated!</> : <><RefreshCw size={20}/> Generate Bracket and Save</>}
                       </motion.span>
                   </AnimatePresence>
               </button>

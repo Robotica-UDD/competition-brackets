@@ -1,0 +1,29 @@
+{
+  "competitors": [
+    {
+      "id": "1",
+      "name": "Competitor 1",
+      "subtitle": "Optional subtitle",
+      "images": [{ "url": "https://placehold.co/200x200/4f46e5/ffffff?text=1" }]
+    },
+    {
+      "id": "2",
+      "name": "Competitor 2",
+      "subtitle": "Another subtitle",
+      "images": [{ "url": "https://placehold.co/200x200/4f46e5/ffffff?text=2" }]
+    },
+    {
+      "id": "3",
+      "name": "Competitor 3",
+      "subtitle": "Optional subtitle",
+      "images": [{ "url": "https://placehold.co/200x200/4f46e5/ffffff?text=3" }]
+    },
+    {
+      "id": "4",
+      "name": "Competitor 4",
+      "subtitle": "Another subtitle",
+      "images": [{ "url": "https://placehold.co/200x200/4f46e5/ffffff?text=4" }]
+    }
+  ],
+  "autoGenerate": true
+}
