@@ -1197,14 +1197,50 @@ const App: FC = () => {
 
       
       <main className="font-sans">
-        <AnimatePresence>
-            {bracketData && bracketData.rounds.length > 0 ? (
-            <BracketPage {...{rounds: bracketData.rounds, winners: bracketData.winners, champion: bracketData.winners[bracketData.winners.length - 1]?.[0] || null, onCompetitorChange: handleCompetitorChangeInBracket, onWinnerSelect: handleWinnerSelect, matchWidth, matchHeight, hGap, vGap}} />
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center min-h-[80vh] gap-4"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                  className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
+                />
+                <p className="text-slate-300 text-lg">Loading bracket...</p>
+              </motion.div>
+            ) : bracketData && bracketData.rounds.length > 0 ? (
+              <BracketPage
+                key="bracket"
+                {...{
+                  rounds: bracketData.rounds,
+                  winners: bracketData.winners,
+                  champion: bracketData.winners[bracketData.winners.length - 1]?.[0] || null,
+                  onCompetitorChange: handleCompetitorChangeInBracket,
+                  onWinnerSelect: handleWinnerSelect,
+                  matchWidth,
+                  matchHeight,
+                  hGap,
+                  vGap
+                }}
+              />
             ) : (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-10 text-slate-500">Add at least two competitors to generate a bracket.</motion.div>
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center p-10 text-slate-500"
+              >
+                Add at least two competitors to generate a bracket.
+              </motion.div>
             )}
-        </AnimatePresence>
-      </main>
+          </AnimatePresence>
+        </main>
       <div className="relative max-w-7xl mx-auto p-4 sm:p-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-2xl">
           <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
