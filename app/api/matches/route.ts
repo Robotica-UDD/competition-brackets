@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const uri = process.env.MONGODB_URI  ;
+const uri = process.env.MONGODB_URI  || "";
 let clientPromise: Promise<MongoClient>;
 
 declare global {
