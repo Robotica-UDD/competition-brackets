@@ -278,12 +278,12 @@ const ShareModal: FC<{ showModal: boolean; onClose: () => void; champion: Compet
               {isGenerating && !previewUrl ? (
                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><RefreshCw /></motion.div>
-                  <p className="mt-2">Generating preview...</p>
+                  <p className="mt-2">Generando vista previa...</p>
                 </div>
               ) : previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="mr-2" />No data to display</div>
+                <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="mr-2" />No hay nada para mostrar</div>
               )}
             </div>
             <div className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-6">
@@ -386,8 +386,9 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
     const [timerDuration, setTimerDuration] = useState(300);
     const [isTimerExpired, setIsTimerExpired] = useState(false);
     const [showFullScreenAnimation, setShowFullScreenAnimation] = useState(false);
-
-
+    const [animationType, setAnimationType] = useState<'start' | 'end'>('end');
+    const [showLedA, setShowLedA] = useState(false);
+    const [showLedB, setShowLedB] = useState(false);
     useEffect(() => {
       if (selectedMatch) {
         setCompetitorAScore(selectedMatch.match.scoreA || 0);
@@ -408,6 +409,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
             if (prev <= 1) {
               setIsTimerRunning(false);
               setIsTimerExpired(true);
+              setAnimationType('end');
               setShowFullScreenAnimation(true);
               setTimeout(() => setShowFullScreenAnimation(false), 4000);
               return 0;
@@ -426,9 +428,21 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
 
     const handleScoreChange = (competitor: 'a' | 'b', increment: number) => {
       if (competitor === 'a') {
-        setCompetitorAScore(Math.max(0, competitorAScore + increment));
+        const newScore = Math.max(0, competitorAScore + increment);
+        setCompetitorAScore(newScore);
+
+        if (increment > 0) {
+          setShowLedA(true);
+          setTimeout(() => setShowLedA(false), 2000);
+        }
       } else {
-        setCompetitorBScore(Math.max(0, competitorBScore + increment));
+        const newScore = Math.max(0, competitorBScore + increment);
+        setCompetitorBScore(newScore);
+
+        if (increment > 0) {
+          setShowLedB(true);
+          setTimeout(() => setShowLedB(false), 2000);
+        }
       }
     };
 
@@ -440,10 +454,10 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
 
       const winner = competitorAScore > competitorBScore ? winnerA :
         competitorBScore > competitorAScore ? winnerB :
-          Math.random() > 0.5 ? winnerA : winnerB; 
+          Math.random() > 0.5 ? winnerA : winnerB;
 
-        onWinnerSelect(roundIndex, matchIndex, winner, competitorAScore, competitorBScore);
-        onClose();
+      onWinnerSelect(roundIndex, matchIndex, winner, competitorAScore, competitorBScore);
+      onClose();
     };
 
     const handleTimerControl = () => {
@@ -454,6 +468,10 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
           setTimeLeft(timerDuration);
           setIsTimerExpired(false);
         }
+        // Mostrar animación de inicio
+        setAnimationType('start');
+        setShowFullScreenAnimation(true);
+        setTimeout(() => setShowFullScreenAnimation(false), 4000);
         setIsTimerRunning(true);
       }
     };
@@ -478,416 +496,489 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
 
     return (
       <>
-      <AnimatePresence>
-        {showFullScreenAnimation && (
+        <AnimatePresence>
+          {showLedA && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="fixed top-1/4 right-1/4 z-[9998] pointer-events-none"
+            >
+              <motion.div
+                animate={{
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 360]
+                }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              >
+                <img
+                  src="../images/led_naranja.PNG"
+                  alt="Point A"
+                  width={120}
+                  height={120}
+                  className="object-contain drop-shadow-2xl"
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center mt-2"
+              >
+                <p className="text-2xl font-bold text-green-400 drop-shadow-lg">
+                  +1 PUNTO!
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* LED Animations para Competitor B */}
+        <AnimatePresence>
+          {showLedB && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="fixed bottom-1/4 right-1/4 z-[9998] pointer-events-none"
+            >
+              <motion.div
+                animate={{
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 360]
+                }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              >
+                <img
+                  src="../images/led_amarillo.PNG"
+                  alt="Point B"
+                  width={120}
+                  height={120}
+                  className="object-contain drop-shadow-2xl"
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center mt-2"
+              >
+                <p className="text-2xl font-bold text-green-400 drop-shadow-lg">+1 PUNTO!</p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showFullScreenAnimation && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] pointer-events-none"
+            >
+              {/* Background overlay with pulsing effect */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: [0, 0.8, 0.4, 0.8, 0],
+                  backgroundColor: animationType === 'start'
+                    ? ['#16a34a', '#22c55e', '#16a34a', '#22c55e', '#16a34a']
+                    : ['#dc2626', '#ef4444', '#dc2626', '#ef4444', '#dc2626']
+                }}
+                transition={{ duration: 4, ease: "easeInOut" }}
+                className={animationType === 'start' ? 'absolute inset-0 bg-green-600' : 'absolute inset-0 bg-red-600'}
+              />
+
+              {/* Animated particles */}
+              <div className="absolute inset-0">
+                {[...Array(20)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{
+                      opacity: 0,
+                      scale: 0,
+                      x: window.innerWidth / 2,
+                      y: window.innerHeight / 2
+                    }}
+                    animate={{
+                      opacity: [0, 1, 0],
+                      scale: [0, 1.5, 0],
+                      x: window.innerWidth / 2 + (Math.random() - 0.5) * 800,
+                      y: window.innerHeight / 2 + (Math.random() - 0.5) * 600
+                    }}
+                    transition={{
+                      duration: 3,
+                      delay: i * 0.1,
+                      ease: "easeOut"
+                    }}
+                    className="absolute w-4 h-4 bg-white rounded-full"
+                  />
+                ))}
+              </div>
+
+              {/* Main text animation */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                  animate={{
+                    scale: [0, 1.2, 0.9, 1],
+                    rotate: [180, 0, 0, 0],
+                    opacity: [0, 1, 1, 1]
+                  }}
+                  transition={{
+                    duration: 2,
+                    times: [0, 0.3, 0.6, 1],
+                    ease: "easeOut"
+                  }}
+                  className="text-center"
+                >
+                  {/* LED - Verde para START, Rojo para END */}
+                  <motion.div
+                    animate={{
+                      rotate: [0, -5, 5, -5, 5, 0],
+                      scale: [1, 1.15, 0.90, 1.3, 0.95, 1]
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: 2,
+                      ease: "easeInOut"
+                    }}
+                    className="text-white text-8xl mb-4 flex justify-center"
+                  >
+                    <img
+                      src={animationType === 'start' ? "../images/led_darienn.PNG" : "../images/led_rojo.PNG"}
+                      alt="LED Logo"
+                      width={240}
+                      height={240}
+                      className="object-contain"
+                    />
+                  </motion.div>
+
+                  {/* Texto principal */}
+                  <motion.h1
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.8 }}
+                    className="text-6xl md:text-8xl font-bold text-white drop-shadow-2xl"
+                    style={{
+                      textShadow: '0 0 20px rgba(255,255,255,0.5), 0 0 40px rgba(255,255,255,0.3)'
+                    }}
+                  >
+                    {animationType === 'start' ? '¡EMPECEMOS!' : 'TIEMPOOO!'}
+                  </motion.h1>
+
+                  <motion.p
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 1, duration: 0.6 }}
+                    className="text-2xl md:text-3xl text-white mt-4 font-semibold"
+                  >
+                    {animationType === 'start' ? '¡QUE COMIENCE LA PELEA!' : '¡DETENGAN LA PELEA!'}
+                  </motion.p>
+                </motion.div>
+              </div>
+
+              {/* Corner effects */}
+              {[...Array(4)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    scale: [0, 1, 1.5]
+                  }}
+                  transition={{
+                    duration: 2,
+                    delay: 0.5 + i * 0.2,
+                    ease: "easeOut"
+                  }}
+                  className={`absolute w-32 h-32 border-4 border-white rounded-full ${i === 0 ? 'top-10 left-10' :
+                      i === 1 ? 'top-10 right-10' :
+                        i === 2 ? 'bottom-10 left-10' :
+                          'bottom-10 right-10'
+                    }`}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] pointer-events-none"
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-lg"
+            onClick={onClose}
           >
-            {/* Background overlay with pulsing effect */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: [0, 0.8, 0.4, 0.8, 0],
-                backgroundColor: ['#dc2626', '#ef4444', '#dc2626', '#ef4444', '#dc2626']
-              }}
-              transition={{ duration: 4, ease: "easeInOut" }}
-              className="absolute inset-0 bg-red-600"
-            />
-            
-            {/* Animated particles */}
-            <div className="absolute inset-0">
-              {[...Array(20)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ 
-                    opacity: 0, 
-                    scale: 0,
-                    x: window.innerWidth / 2,
-                    y: window.innerHeight / 2
-                  }}
-                  animate={{ 
-                    opacity: [0, 1, 0],
-                    scale: [0, 1.5, 0],
-                    x: window.innerWidth / 2 + (Math.random() - 0.5) * 800,
-                    y: window.innerHeight / 2 + (Math.random() - 0.5) * 600
-                  }}
-                  transition={{ 
-                    duration: 3,
-                    delay: i * 0.1,
-                    ease: "easeOut"
-                  }}
-                  className="absolute w-4 h-4 bg-white rounded-full"
-                />
-              ))}
-            </div>
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-slate-900/90 border border-slate-700 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl w-full max-w-sm sm:max-w-2xl lg:max-w-5xl max-h-[95vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
 
-            {/* Main text animation */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                initial={{ scale: 0, rotate: -180, opacity: 0 }}
-                animate={{ 
-                  scale: [0, 1.2, 0.9, 1],
-                  rotate: [180, 0, 0, 0],
-                  opacity: [0, 1, 1, 1]
-                }}
-                transition={{ 
-                  duration: 2,
-                  times: [0, 0.3, 0.6, 1],
-                  ease: "easeOut"
-                }}
-                className="text-center"
-              >
-                {/* LED ROJO */}
-                <motion.div
-                  animate={{ 
-                    rotate: [0, -5, 5, -5, 5, 0],
-                    scale: [1, 1.15, 0.90, 1.3, 0.95,1]
-                  }}
-                  transition={{ 
-                    duration: 0.8,
-                    repeat: 2,
-                    ease: "easeInOut"
-                  }}
-                  className="text-white text-8xl mb-4 flex justify-center"
-                  >
-                  <img 
-                    src="../images/led_rojo.PNG" 
-                    alt="LED Logo" 
-                    width={240}
-                    height={240}
-                    className="object-contain"
-                  />
-                </motion.div>
+                <div className="w-8"></div>
 
-                {/* Texto de tiempo finalizado */}
-                <motion.h1
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.8 }}
-                  className="text-6xl md:text-8xl font-bold text-white drop-shadow-2xl"
-                  style={{
-                    textShadow: '0 0 20px rgba(255,255,255,0.5), 0 0 40px rgba(255,255,255,0.3)'
-                  }}
+                <h2 className="text-xl lg:text-4xl sm:text-2xl font-bold text-white flex-1 text-center">
+                  Ronda {roundIndex + 1} - Partida {matchIndex + 1}
+                </h2>
+                <button
+                  onClick={onClose}
+                  className="text-slate-400 hover:text-white transition-colors rounded-full p-1 hover:bg-slate-700"
                 >
-                  TIEMPOOO!
-                </motion.h1>
+                  <X size={20} className="sm:w-6 sm:h-6" />
+                </button>
 
-                <motion.p
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 1, duration: 0.6 }}
-                  className="text-2xl md:text-3xl text-white mt-4 font-semibold"
-                >
-                  ¡DETENGAN LA PELEA!
-                </motion.p>
-              </motion.div>
-            </div>
+              </div>
 
-            {/* Corner effects */}
-            {[...Array(4)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ 
-                  opacity: [0, 1, 0],
-                  scale: [0, 1, 1.5]
-                }}
-                transition={{ 
-                  duration: 2,
-                  delay: 0.5 + i * 0.2,
-                  ease: "easeOut"
-                }}
-                className={`absolute w-32 h-32 border-4 border-white rounded-full ${
-                  i === 0 ? 'top-10 left-10' :
-                  i === 1 ? 'top-10 right-10' :
-                  i === 2 ? 'bottom-10 left-10' :
-                  'bottom-10 right-10'
-                }`}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-lg"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-            className="bg-slate-900/90 border border-slate-700 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl w-full max-w-sm sm:max-w-2xl lg:max-w-5xl max-h-[95vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex justify-between items-center mb-4 sm:mb-6">
-              
-              <div className="w-8"></div>
-
-              <h2 className="text-xl lg:text-4xl sm:text-2xl font-bold text-white flex-1 text-center">
-                Round {roundIndex + 1} - Match {matchIndex + 1}
-              </h2>
-              <button
-                onClick={onClose}
-                className="text-slate-400 hover:text-white transition-colors rounded-full p-1 hover:bg-slate-700"
-              >
-                <X size={20} className="sm:w-6 sm:h-6" />
-              </button> 
-
-            </div>
-
-            {/* Layout: Stack en móvil, lado a lado en desktop */}
-            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-              {/* Timer Section */}
-              <div className="w-full lg:w-80 lg:flex-shrink-0">
-                <div className="bg-slate-800/60 rounded-lg p-3 sm:p-4 border border-slate-600 h-full">
-                  <div className="text-center mb-3 sm:mb-4">
-                    <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white">Match Timer</h3>
-                  </div>
-
-                  {/* Timer inputs - Stack en móvil muy pequeño */}
-                  <div className="flex flex-wrap justify-center items-center gap-2 mb-4 sm:mb-6">
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        min="0"
-                        max="60"
-                        step="1"
-                        value={Math.floor(timerDuration / 60) || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === "") {
-                            const currentSeconds = timerDuration % 60;
-                            setTimerDuration(currentSeconds);
-                            if (!isTimerRunning) {
-                              setTimeLeft(currentSeconds);
-                              setIsTimerExpired(false);
-                            }
-                            return;
-                          }
-                          const minutes = parseInt(value) || 0;
-                          const currentSeconds = timerDuration % 60;
-                          const newDuration = minutes * 60 + currentSeconds;
-                          setTimerDuration(newDuration);
-                          if (!isTimerRunning) {
-                            setTimeLeft(newDuration);
-                            setIsTimerExpired(false);
-                          }
-                        }}
-                        className="bg-slate-700 text-white rounded px-2 py-1 text-center text-sm border border-slate-600 w-12 sm:w-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={isTimerRunning}
-                        placeholder="0"
-                      />
-                      <span className="text-slate-300 text-xs sm:text-sm font-medium">min</span>
+              {/* Layout: Stack en móvil, lado a lado en desktop */}
+              <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                {/* Timer Section */}
+                <div className="w-full lg:w-80 lg:flex-shrink-0">
+                  <div className="bg-slate-800/60 rounded-lg p-3 sm:p-4 border border-slate-600 h-full">
+                    <div className="text-center mb-3 sm:mb-4">
+                      <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white">Cronómetro</h3>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        step="1"
-                        value={timerDuration % 60 || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === "") {
-                            const currentMinutes = Math.floor(timerDuration / 60);
-                            const newDuration = currentMinutes * 60;
+                    {/* Timer inputs - Stack en móvil muy pequeño */}
+                    <div className="flex flex-wrap justify-center items-center gap-2 mb-4 sm:mb-6">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="60"
+                          step="1"
+                          value={Math.floor(timerDuration / 60) || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "") {
+                              const currentSeconds = timerDuration % 60;
+                              setTimerDuration(currentSeconds);
+                              if (!isTimerRunning) {
+                                setTimeLeft(currentSeconds);
+                                setIsTimerExpired(false);
+                              }
+                              return;
+                            }
+                            const minutes = parseInt(value) || 0;
+                            const currentSeconds = timerDuration % 60;
+                            const newDuration = minutes * 60 + currentSeconds;
                             setTimerDuration(newDuration);
                             if (!isTimerRunning) {
                               setTimeLeft(newDuration);
                               setIsTimerExpired(false);
                             }
-                            return;
-                          }
-                          const seconds = parseInt(value) || 0;
-                          const currentMinutes = Math.floor(timerDuration / 60);
-                          const newDuration = currentMinutes * 60 + seconds;
-                          setTimerDuration(newDuration);
-                          if (!isTimerRunning) {
-                            setTimeLeft(newDuration);
-                            setIsTimerExpired(false);
-                          }
-                        }}
-                        className="bg-slate-700 text-white rounded px-2 py-1 text-center text-sm border border-slate-600 w-12 sm:w-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={isTimerRunning}
-                        placeholder="0"
-                      />
-                      <span className="text-slate-300 text-xs sm:text-sm font-medium">seg</span>
+                          }}
+                          className="bg-slate-700 text-white rounded px-2 py-1 text-center text-sm border border-slate-600 w-12 sm:w-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={isTimerRunning}
+                          placeholder="0"
+                        />
+                        <span className="text-slate-300 text-xs sm:text-sm font-medium">min</span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          step="1"
+                          value={timerDuration % 60 || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "") {
+                              const currentMinutes = Math.floor(timerDuration / 60);
+                              const newDuration = currentMinutes * 60;
+                              setTimerDuration(newDuration);
+                              if (!isTimerRunning) {
+                                setTimeLeft(newDuration);
+                                setIsTimerExpired(false);
+                              }
+                              return;
+                            }
+                            const seconds = parseInt(value) || 0;
+                            const currentMinutes = Math.floor(timerDuration / 60);
+                            const newDuration = currentMinutes * 60 + seconds;
+                            setTimerDuration(newDuration);
+                            if (!isTimerRunning) {
+                              setTimeLeft(newDuration);
+                              setIsTimerExpired(false);
+                            }
+                          }}
+                          className="bg-slate-700 text-white rounded px-2 py-1 text-center text-sm border border-slate-600 w-12 sm:w-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={isTimerRunning}
+                          placeholder="0"
+                        />
+                        <span className="text-slate-300 text-xs sm:text-sm font-medium">seg</span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Timer display */}
-                  <div className="text-center">
-                    <div className={`text-5xl sm:text-5xl lg:text-7xl font-mono font-bold mt-12 sm:mb-4 ${getTimerColor()}`}>
-                      {formatTime(isNaN(timeLeft) ? 0 : timeLeft)}
-                    </div>
+                    {/* Timer display */}
+                    <div className="text-center">
+                      <div className={`text-5xl sm:text-5xl lg:text-7xl font-mono font-bold mt-12 sm:mb-4 ${getTimerColor()}`}>
+                        {formatTime(isNaN(timeLeft) ? 0 : timeLeft)}
+                      </div>
 
-                    {isTimerExpired && (
-                      <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="text-red-400 font-semibold mb-3 sm:mb-4 text-sm sm:text-base"
-                      >
-                         TIEMPOOO!
-                      </motion.div>
-                    )}
+                      {isTimerExpired && (
+                        <motion.div
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="text-red-400 font-semibold mb-3 sm:mb-4 text-sm sm:text-base"
+                        >
+                          TIEMPOOO!
+                        </motion.div>
+                      )}
 
-                    {/* Timer controls - Horizontal en móvil, vertical en desktop */}
-                    <div className="flex flex-row lg:flex-col gap-2 mt-12 sm:gap-3 ">
-                      <button
-                        onClick={handleTimerControl}
-                        className={`flex-1 lg:flex-none px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors text-sm sm:text-base ${isTimerRunning
+                      {/* Timer controls - Horizontal en móvil, vertical en desktop */}
+                      <div className="flex flex-row lg:flex-col gap-2 mt-12 sm:gap-3 ">
+                        <button
+                          onClick={handleTimerControl}
+                          className={`flex-1 lg:flex-none px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors text-sm sm:text-base ${isTimerRunning
                             ? 'bg-orange-600 hover:bg-orange-700 text-white'
                             : 'bg-green-600 hover:bg-green-700 text-white'
-                          }`}
-                      >
-                        {isTimerRunning ? 'Pause' : 'Play'}
-                      </button>
-                      <button
-                        onClick={resetTimer}
-                        className="flex-1 lg:flex-none px-3 sm:px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors text-sm sm:text-base"
-                      >
-                        Reset
-                      </button>
+                            }`}
+                        >
+                          {isTimerRunning ? 'Pausar' : 'Empezar'}
+                        </button>
+                        <button
+                          onClick={resetTimer}
+                          className="flex-1 lg:flex-none px-3 sm:px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-colors text-sm sm:text-base"
+                        >
+                          Reiniciar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Competitors Section */}
+                <div className="flex-1 space-y-4 sm:space-y-6">
+                  {/* Competitor A */}
+                  {match.a && (
+                    <div className="bg-slate-800/60 rounded-lg p-3 sm:p-4 border border-slate-600">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <img
+                            src={match.a.images?.[0]?.url ?? placeholderImgUrl}
+                            alt={match.a.name}
+                            width={50}
+                            height={50}
+                            className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-lg object-cover flex-shrink-0"
+                          />
+                          <div className="flex-grow min-w-0">
+                            <h3 className="text-lg sm:text-xl font-bold text-white truncate">{match.a.name}</h3>
+                            {match.a.subtitle && (
+                              <p className="text-slate-400 text-sm truncate">{match.a.subtitle}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Score Controls */}
+                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center">
+                          <button
+                            onClick={() => handleScoreChange('a', -1)}
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors font-bold text-lg"
+                          >
+                            -
+                          </button>
+                          <div className="text-2xl sm:text-3xl font-bold text-white min-w-[3rem] sm:min-w-[4rem] text-center bg-slate-700 rounded-lg px-3 sm:px-4 py-1 sm:py-2">
+                            {competitorAScore}
+                          </div>
+                          <button
+                            onClick={() => handleScoreChange('a', 1)}
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors font-bold text-lg"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* VS Divider */}
+                  {match.a && match.b && (
+                    <div className="text-center">
+                      <div className="text-2xl sm:text-3xl font-bold text-slate-300 bg-slate-700/50 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto">
+                        VS
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Competitor B */}
+                  {match.b && (
+                    <div className="bg-slate-800/60 rounded-lg p-3 sm:p-4 border border-slate-600">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <img
+                            src={match.b.images?.[0]?.url ?? placeholderImgUrl}
+                            alt={match.b.name}
+                            width={50}
+                            height={50}
+                            className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-lg object-cover flex-shrink-0"
+                          />
+                          <div className="flex-grow min-w-0">
+                            <h3 className="text-lg sm:text-xl font-bold text-white truncate">{match.b.name}</h3>
+                            {match.b.subtitle && (
+                              <p className="text-slate-400 text-sm truncate">{match.b.subtitle}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Score Controls */}
+                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center">
+                          <button
+                            onClick={() => handleScoreChange('b', -1)}
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors font-bold text-lg"
+                          >
+                            -
+                          </button>
+                          <div className="text-2xl sm:text-3xl font-bold text-white min-w-[3rem] sm:min-w-[4rem] text-center bg-slate-700 rounded-lg px-3 sm:px-4 py-1 sm:py-2">
+                            {competitorBScore}
+                          </div>
+                          <button
+                            onClick={() => handleScoreChange('b', 1)}
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors font-bold text-lg"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Finish Match Button */}
+                  {match.a && match.b && (
+                    <div className="flex justify-center pt-2 sm:pt-4">
+                      <button
+                        onClick={handleFinishScoring}
+                        className="w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 text-sm sm:text-lg"
+                      >
+                        <span className="hidden sm:inline">Terminar Partida</span>
+                        <span className="sm:hidden">Terminar</span>
+                        <span className="text-yellow-300 font-bold text-xs sm:text-base">
+                          ({competitorAScore > competitorBScore ? match.a.name :
+                            competitorBScore > competitorAScore ? match.b.name : 'Empate'} gana)
+                        </span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Bye match */}
+                  {match.a && !match.b && (
+                    <div className="text-center py-6 sm:py-8">
+                      <div className="bg-slate-700/50 rounded-lg p-4 sm:p-6">
+                        <Crown size={24} className="sm:w-8 sm:h-8 text-yellow-400 mx-auto mb-4" />
+                        <p className="text-slate-300 text-sm sm:text-lg">{match.a.name} Avanza automáticamente </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {/* Competitors Section */}
-              <div className="flex-1 space-y-4 sm:space-y-6">
-                {/* Competitor A */}
-                {match.a && (
-                  <div className="bg-slate-800/60 rounded-lg p-3 sm:p-4 border border-slate-600">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <img
-                          src={match.a.images?.[0]?.url ?? placeholderImgUrl}
-                          alt={match.a.name}
-                          width={50}
-                          height={50}
-                          className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-lg object-cover flex-shrink-0"
-                        />
-                        <div className="flex-grow min-w-0">
-                          <h3 className="text-lg sm:text-xl font-bold text-white truncate">{match.a.name}</h3>
-                          {match.a.subtitle && (
-                            <p className="text-slate-400 text-sm truncate">{match.a.subtitle}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Score Controls */}
-                      <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center">
-                        <button
-                          onClick={() => handleScoreChange('a', -1)}
-                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors font-bold text-lg"
-                        >
-                          -
-                        </button>
-                        <div className="text-2xl sm:text-3xl font-bold text-white min-w-[3rem] sm:min-w-[4rem] text-center bg-slate-700 rounded-lg px-3 sm:px-4 py-1 sm:py-2">
-                          {competitorAScore}
-                        </div>
-                        <button
-                          onClick={() => handleScoreChange('a', 1)}
-                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors font-bold text-lg"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* VS Divider */}
-                {match.a && match.b && (
-                  <div className="text-center">
-                    <div className="text-2xl sm:text-3xl font-bold text-slate-300 bg-slate-700/50 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto">
-                      VS
-                    </div>
-                  </div>
-                )}
-
-                {/* Competitor B */}
-                {match.b && (
-                  <div className="bg-slate-800/60 rounded-lg p-3 sm:p-4 border border-slate-600">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <img
-                          src={match.b.images?.[0]?.url ?? placeholderImgUrl}
-                          alt={match.b.name}
-                          width={50}
-                          height={50}
-                          className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-lg object-cover flex-shrink-0"
-                        />
-                        <div className="flex-grow min-w-0">
-                          <h3 className="text-lg sm:text-xl font-bold text-white truncate">{match.b.name}</h3>
-                          {match.b.subtitle && (
-                            <p className="text-slate-400 text-sm truncate">{match.b.subtitle}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Score Controls */}
-                      <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center">
-                        <button
-                          onClick={() => handleScoreChange('b', -1)}
-                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors font-bold text-lg"
-                        >
-                          -
-                        </button>
-                        <div className="text-2xl sm:text-3xl font-bold text-white min-w-[3rem] sm:min-w-[4rem] text-center bg-slate-700 rounded-lg px-3 sm:px-4 py-1 sm:py-2">
-                          {competitorBScore}
-                        </div>
-                        <button
-                          onClick={() => handleScoreChange('b', 1)}
-                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition-colors font-bold text-lg"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Finish Match Button */}
-                {match.a && match.b && (
-                  <div className="flex justify-center pt-2 sm:pt-4">
-                    <button
-                      onClick={handleFinishScoring}
-                      className="w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 text-sm sm:text-lg"
-                    >
-                      <span className="hidden sm:inline">Finish Match</span>
-                      <span className="sm:hidden">Finish</span>
-                      <span className="text-yellow-300 font-bold text-xs sm:text-base">
-                        ({competitorAScore > competitorBScore ? match.a.name :
-                          competitorBScore > competitorAScore ? match.b.name : 'Tie'} wins)
-                      </span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Bye match */}
-                {match.a && !match.b && (
-                  <div className="text-center py-6 sm:py-8">
-                    <div className="bg-slate-700/50 rounded-lg p-4 sm:p-6">
-                      <Crown size={24} className="sm:w-8 sm:h-8 text-yellow-400 mx-auto mb-4" />
-                      <p className="text-slate-300 text-sm sm:text-lg">{match.a.name} advances automatically (Bye)</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      </AnimatePresence>
+        </AnimatePresence>
       </>
     );
   };
@@ -971,28 +1062,28 @@ const generateBracketData = (competitors: Competitor[], isManual = false): { rou
   const allRounds: Match[][] = [];
   const allWinners: Competitor[][] = [];
   const round1Matches: Match[] = [];
-  
-  for (let i = 0; i < players.length; i += 2) { 
-    round1Matches.push({ 
+
+  for (let i = 0; i < players.length; i += 2) {
+    round1Matches.push({
       id: `match_${Date.now()}_${i}`,
-      a: players[i], 
+      a: players[i],
       b: players[i + 1],
       scoreA: 0,
       scoreB: 0
-    }); 
+    });
   }
-  
-  if (byePlayer) { 
-    round1Matches.push({ 
+
+  if (byePlayer) {
+    round1Matches.push({
       id: `match_bye_${Date.now()}`,
-      a: byePlayer, 
+      a: byePlayer,
       b: null,
       scoreA: 0,
       scoreB: 0,
       winner: byePlayer
-    }); 
+    });
   }
-  
+
   allRounds.push(round1Matches);
   const round1Winners = round1Matches.map(match => {
     if (match.a && !match.b) return match.a;
@@ -1000,43 +1091,43 @@ const generateBracketData = (competitors: Competitor[], isManual = false): { rou
     return null;
   }).filter((c): c is Competitor => c !== null);
   allWinners.push(round1Winners);
-  
+
   if (!isManual) {
     let currentPlayers = round1Winners;
     while (currentPlayers.length > 1) {
-      const nextRoundMatches: Match[] = []; 
+      const nextRoundMatches: Match[] = [];
       const nextRoundWinners: Competitor[] = [];
-      
+
       for (let i = 0; i < currentPlayers.length; i += 2) {
-        const match: Match = { 
+        const match: Match = {
           id: `match_${Date.now()}_${i}_round`,
-          a: currentPlayers[i], 
+          a: currentPlayers[i],
           b: currentPlayers[i + 1] ?? null,
           scoreA: 0,
           scoreB: 0
         };
         nextRoundMatches.push(match);
         if (match.a) {
-          if (!match.b) { 
-            nextRoundWinners.push(match.a); 
-          } else { 
+          if (!match.b) {
+            nextRoundWinners.push(match.a);
+          } else {
             const winner = Math.random() > 0.5 ? match.a : match.b;
             match.winner = winner;
             nextRoundWinners.push(winner);
           }
         }
       }
-      allRounds.push(nextRoundMatches); 
-      allWinners.push(nextRoundWinners); 
+      allRounds.push(nextRoundMatches);
+      allWinners.push(nextRoundWinners);
       currentPlayers = nextRoundWinners;
     }
   } else {
     let lastRoundMatchCount = round1Matches.length;
     while (lastRoundMatchCount > 1) {
       const nextRoundSize = Math.ceil(lastRoundMatchCount / 2);
-      const nextRoundMatches = Array.from({ length: nextRoundSize }, (_, i) => ({ 
+      const nextRoundMatches = Array.from({ length: nextRoundSize }, (_, i) => ({
         id: `match_empty_${Date.now()}_${i}`,
-        a: null, 
+        a: null,
         b: null,
         scoreA: 0,
         scoreB: 0
@@ -1045,7 +1136,7 @@ const generateBracketData = (competitors: Competitor[], isManual = false): { rou
       allWinners.push([]);
       lastRoundMatchCount = nextRoundSize;
     }
-    
+
     for (let r = 0; r < allRounds.length - 1; r++) {
       allWinners[r].forEach(winner => {
         const originalMatchIndex = allRounds[r].findIndex(m => m.a?.id === winner.id || m.b?.id === winner.id);
@@ -1053,20 +1144,20 @@ const generateBracketData = (competitors: Competitor[], isManual = false): { rou
           const nextMatchIndex = Math.floor(originalMatchIndex / 2);
           const nextSlot = originalMatchIndex % 2 === 0 ? 'a' : 'b';
           const nextRound = allRounds[r + 1];
-          if (nextRound?.[nextMatchIndex]) { 
-            nextRound[nextMatchIndex][nextSlot] = winner; 
+          if (nextRound?.[nextMatchIndex]) {
+            nextRound[nextMatchIndex][nextSlot] = winner;
           }
         }
       });
-      
+
       const nextRound = allRounds[r + 1];
       if (nextRound) {
         nextRound.forEach(match => {
-          if (match.a && !match.b && !allWinners[r + 1].some(w => w.id === match.a!.id)) { 
-            allWinners[r + 1].push(match.a); 
+          if (match.a && !match.b && !allWinners[r + 1].some(w => w.id === match.a!.id)) {
+            allWinners[r + 1].push(match.a);
           }
-          if (!match.a && match.b && !allWinners[r + 1].some(w => w.id === match.b!.id)) { 
-            allWinners[r + 1].push(match.b); 
+          if (!match.a && match.b && !allWinners[r + 1].some(w => w.id === match.b!.id)) {
+            allWinners[r + 1].push(match.b);
           }
         });
       }
@@ -1090,9 +1181,9 @@ const App: FC = () => {
   const [isCompetitorListOpen, setIsCompetitorListOpen] = useState(false); // Nuevo estado
   const MAX_COMPETITORS = 1024;
   const TOURNAMENT_ID = 'eiri-2025';
-  
 
-    useEffect(() => {
+
+  useEffect(() => {
     const loadCompetitors = async () => {
       setIsLoading(true); // Iniciar loading
 
@@ -1100,10 +1191,10 @@ const App: FC = () => {
         // Cambiar a la API route
         const response = await fetch('/api');
         const data = await response.json();
-        
+
         if (data.success && data.competitors.length > 0) {
           setCompetitors(data.competitors);
-          const generated = generateBracketData(data.competitors, true); 
+          const generated = generateBracketData(data.competitors, true);
           const saved = await loadMatchesFromMongo();
           console.log(saved)
           if (saved.length) {
@@ -1163,7 +1254,7 @@ const App: FC = () => {
       console.error('Error saving matches:', error);
     }
   };
-  
+
   const loadMatchesFromMongo = async () => {
     try {
       const response = await fetch(`/api/matches?tournamentId=${encodeURIComponent(TOURNAMENT_ID)}`);
@@ -1213,21 +1304,21 @@ const App: FC = () => {
   const handleAddCompetitor = async () => {
     if (newCompetitorName.trim() === "" || competitors.length >= MAX_COMPETITORS) return;
     const newCompetitor: Competitor = {
-      id: `competitor_${Date.now()}`, 
-      name: newCompetitorName.trim(), 
+      id: `competitor_${Date.now()}`,
+      name: newCompetitorName.trim(),
       subtitle: newCompetitorSubtitle.trim(),
       images: [{ url: `https://placehold.co/200x200/4f46e5/ffffff?text=${competitors.length + 1}` }],
     };
-    
+
     const updated = [...competitors, newCompetitor];
     setCompetitors(updated);
-    setNewCompetitorName(""); 
+    setNewCompetitorName("");
     setNewCompetitorSubtitle("");
-    
+
     await saveCompetitorsToMongo(updated);
   };
 
-  const handleRemoveCompetitor = async (id: string) => { 
+  const handleRemoveCompetitor = async (id: string) => {
     const updated = competitors.filter(c => c.id !== id);
     setCompetitors(updated);
     await saveCompetitorsToMongo(updated);
@@ -1274,14 +1365,14 @@ const App: FC = () => {
     if (!bracketData || mode === 'random') return;
     let newRounds = JSON.parse(JSON.stringify(bracketData.rounds)) as Match[][];
     let newWinners = JSON.parse(JSON.stringify(bracketData.winners)) as Competitor[][];
-    
+
     newRounds[roundIndex][matchIndex].scoreA = scoreA;
     newRounds[roundIndex][matchIndex].scoreB = scoreB;
     newRounds[roundIndex][matchIndex].winner = winner;
     const match = newRounds[roundIndex][matchIndex];
-    
-   
-    
+
+
+
     const clearFutureProgression = (currentRound: number, currentMatchIdx: number) => {
       if (currentRound + 1 >= newRounds.length) return;
       const nextMatchIndex = Math.floor(currentMatchIdx / 2);
@@ -1293,11 +1384,11 @@ const App: FC = () => {
         clearFutureProgression(currentRound + 1, nextMatchIndex);
       }
     };
-    
+
     clearFutureProgression(roundIndex, matchIndex);
     newWinners[roundIndex] = newWinners[roundIndex].filter((w: Competitor) => w.id !== match.a?.id && w.id !== match.b?.id);
     newWinners[roundIndex].push(winner);
-    
+
     for (let r = roundIndex; r < newRounds.length - 1; r++) {
       const currentWinnersInRound = newWinners[r];
       const nextRound = newRounds[r + 1];
@@ -1330,16 +1421,18 @@ const App: FC = () => {
     <div className=''>
 
       <div className="relative bg-blue-950 text-white  min-h-screen ">
-        <div className="w-full  mb-8 text-center font-bold flex justify-between items-center">
+        <div className="w-full   text-center font-bold flex justify-between items-center">
           <span></span>
-          <h1 className="text-5xl mt-8 text-center font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">EIRI Competition</h1>
+          <h1 className="text-5xl mt-8 text-center font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300 "style={{ lineHeight: '1.2' }}>
+            Final Talleres <br />de Robótica UDD
+          </h1>             
           <span></span>
         </div>
 
         <div className="absolute  top-0 left-0 w-full h-full bg-[radial-gradient(#C7C7C740_2px,transparent_1px)] [background-size:32px_32px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_50%,transparent_100%)]"></div>
 
-      
-      <main className="font-sans">
+
+        <main className="font-sans -mt-8">
           <AnimatePresence mode="wait">
             {isLoading ? (
               <motion.div
@@ -1379,84 +1472,84 @@ const App: FC = () => {
                 exit={{ opacity: 0 }}
                 className="text-center p-10 text-slate-500"
               >
-                Add at least two competitors to generate a bracket.
+                Añade mínimo 2 competidores para generar bracket
               </motion.div>
             )}
           </AnimatePresence>
         </main>
-      <div className="relative max-w-7xl mx-auto p-4 sm:p-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-2xl">
-          <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-            <button 
-              onClick={() => setIsCompetitorListOpen(!isCompetitorListOpen)}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <h2 className="text-2xl font-bold">Competitor List ({competitors.length})</h2>
-              <motion.div
-                animate={{ rotate: isCompetitorListOpen ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
+        <div className="relative max-w-7xl mx-auto p-4 sm:p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-2xl">
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+              <button
+                onClick={() => setIsCompetitorListOpen(!isCompetitorListOpen)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </motion.div>
-            </button>
-            <div className="flex items-center gap-2 p-1 bg-slate-700/80 rounded-lg border border-slate-600">
-              <button onClick={() => setMode('random')} className={`px-4 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${mode === 'random' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-600/50'}`}><Zap size={16}/> Random</button>
-              <button onClick={() => setMode('manual')} className={`px-4 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${mode === 'manual' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-600/50'}`}><PenSquare size={16}/> Manual</button>
-            </div>
-          </div>
-          
-          <motion.div
-            initial={false}
-            animate={{
-              height: isCompetitorListOpen ? "auto" : 0,
-              opacity: isCompetitorListOpen ? 1 : 0
-            }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              <AnimatePresence>
-              {competitors.map((competitor) => (
-                <motion.div layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} key={competitor.id} className="flex items-center bg-slate-700/50 p-2 rounded-lg gap-3 border border-transparent hover:border-slate-600 transition-colors duration-200">
-                  <label title="Click to upload image" className="cursor-pointer group relative flex-shrink-0">
-                    <img src={competitor.images?.[0]?.url ?? placeholderImgUrl} alt={competitor.name} width={40} height={40} className="rounded-md object-cover transition-opacity group-hover:opacity-70" />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><UploadCloud size={20} /></div>
-                    <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(competitor.id, e.target.files[0])} />
-                  </label>
-                  <div className="flex-grow">
-                    <input type="text" value={competitor.name} onChange={(e) => handleEditCompetitorInList(competitor.id, 'name', e.target.value)} className="bg-transparent text-white w-full focus:outline-none text-sm font-semibold" placeholder="Name..."/>
-                    <input type="text" value={competitor.subtitle ?? ''} onChange={(e) => handleEditCompetitorInList(competitor.id, 'subtitle', e.target.value)} className="bg-transparent text-slate-400 w-full focus:outline-none text-xs" placeholder="Subtitle..."/>
-                  </div>
-                  <button onClick={() => handleRemoveCompetitor(competitor.id)} className="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0 p-1">
-                    <Trash2 size={18} />
-                  </button>
+                <h2 className="text-2xl font-bold">Lista de Competidores ({competitors.length})</h2>
+                <motion.div
+                  animate={{ rotate: isCompetitorListOpen ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
                 </motion.div>
-              ))}
-              </AnimatePresence>
+              </button>
+              <div className="flex items-center gap-2 p-1 bg-slate-700/80 rounded-lg border border-slate-600">
+                <button onClick={() => setMode('random')} className={`px-4 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${mode === 'random' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-600/50'}`}><Zap size={16} /> Random</button>
+                <button onClick={() => setMode('manual')} className={`px-4 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${mode === 'manual' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-600/50'}`}><PenSquare size={16} /> Manual</button>
+              </div>
             </div>
-            <div className="grid md:grid-cols-2 gap-4 mb-6 items-end">
-               <input type="text" value={newCompetitorName} onChange={(e) => setNewCompetitorName(e.target.value)} className={inputClasses} placeholder="New competitor name..." />
-               <input type="text" value={newCompetitorSubtitle} onChange={(e) => setNewCompetitorSubtitle(e.target.value)} className={inputClasses} placeholder="Subtitle..."/>
-            </div>
-            <div className="flex flex-wrap gap-4 justify-between border-t border-slate-700 pt-6">
-              <button onClick={handleAddCompetitor} className={primaryBtnClasses}><PlusCircle size={20} /> Add Competitor </button>
-              <button onClick={handleGenerateBracket} disabled={isGenerating} className={`${primaryBtnClasses} ${isGenerating ? 'bg-gradient-to-r from-green-500 to-teal-500' : ''}`}>
+
+            <motion.div
+              initial={false}
+              animate={{
+                height: isCompetitorListOpen ? "auto" : 0,
+                opacity: isCompetitorListOpen ? 1 : 0
+              }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <AnimatePresence>
+                  {competitors.map((competitor) => (
+                    <motion.div layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} key={competitor.id} className="flex items-center bg-slate-700/50 p-2 rounded-lg gap-3 border border-transparent hover:border-slate-600 transition-colors duration-200">
+                      <label title="Click to upload image" className="cursor-pointer group relative flex-shrink-0">
+                        <img src={competitor.images?.[0]?.url ?? placeholderImgUrl} alt={competitor.name} width={40} height={40} className="rounded-md object-cover transition-opacity group-hover:opacity-70" />
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><UploadCloud size={20} /></div>
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(competitor.id, e.target.files[0])} />
+                      </label>
+                      <div className="flex-grow">
+                        <input type="text" value={competitor.name} onChange={(e) => handleEditCompetitorInList(competitor.id, 'name', e.target.value)} className="bg-transparent text-white w-full focus:outline-none text-sm font-semibold" placeholder="Name..." />
+                        <input type="text" value={competitor.subtitle ?? ''} onChange={(e) => handleEditCompetitorInList(competitor.id, 'subtitle', e.target.value)} className="bg-transparent text-slate-400 w-full focus:outline-none text-xs" placeholder="Subtitle..." />
+                      </div>
+                      <button onClick={() => handleRemoveCompetitor(competitor.id)} className="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0 p-1">
+                        <Trash2 size={18} />
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4 mb-6 items-end">
+                <input type="text" value={newCompetitorName} onChange={(e) => setNewCompetitorName(e.target.value)} className={inputClasses} placeholder="Nuevo nombre de competidor..." />
+                <input type="text" value={newCompetitorSubtitle} onChange={(e) => setNewCompetitorSubtitle(e.target.value)} className={inputClasses} placeholder="Subtítulo..." />
+              </div>
+              <div className="flex flex-wrap gap-4 justify-between border-t border-slate-700 pt-6">
+                <button onClick={handleAddCompetitor} className={primaryBtnClasses}><PlusCircle size={20} /> Añadir Competidor </button>
+                <button onClick={handleGenerateBracket} disabled={isGenerating} className={`${primaryBtnClasses} ${isGenerating ? 'bg-gradient-to-r from-green-500 to-teal-500' : ''}`}>
                   <AnimatePresence mode="wait">
-                      <motion.span key={isGenerating ? 'generating' : 'idle'} initial={{opacity:0, y: -10}} animate={{opacity:1, y: 0}} exit={{opacity:0, y: 10}} transition={{duration:0.2}} className="flex items-center gap-2">
-                          {isGenerating ? <><CheckCircle size={20}/> Generated!</> : <><RefreshCw size={20}/> Generate Bracket and Save</>}
-                      </motion.span>
+                    <motion.span key={isGenerating ? 'generating' : 'idle'} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: 0.2 }} className="flex items-center gap-2">
+                      {isGenerating ? <><CheckCircle size={20} /> Generado!</> : <><RefreshCw size={20} /> Generar Bracket y Guardar</>}
+                    </motion.span>
                   </AnimatePresence>
                 </button>
               </div>
               <div className="bg-slate-800/60 rounded-lg p-4 mt-6 border border-slate-700">
-                <h3 className="text-lg font-bold mb-4">Bracket Settings</h3>
+                <h3 className="text-lg font-bold mb-4">Configuración del Bracket</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div><label className="block text-sm text-slate-400 mb-1">Card Width</label><input type="number" value={matchWidth} onChange={(e) => setMatchWidth(parseInt(e.target.value) || 300)} className={inputClasses} /></div>
-                  <div><label className="block text-sm text-slate-400 mb-1">Card Height</label><input type="number" value={matchHeight} onChange={(e) => setMatchHeight(parseInt(e.target.value) || 100)} className={inputClasses} /></div>
-                  <div><label className="block text-sm text-slate-400 mb-1">Horizontal Gap</label><input type="number" value={hGap} onChange={(e) => setHGap(parseInt(e.target.value) || 60)} className={inputClasses} /></div>
-                  <div><label className="block text-sm text-slate-400 mb-1">Vertical Gap</label><input type="number" value={vGap} onChange={(e) => setVGap(parseInt(e.target.value) || 25)} className={inputClasses} /></div>
+                  <div><label className="block text-sm text-slate-400 mb-1">Ancho de la Tarjeta</label><input type="number" value={matchWidth} onChange={(e) => setMatchWidth(parseInt(e.target.value) || 300)} className={inputClasses} /></div>
+                  <div><label className="block text-sm text-slate-400 mb-1">Alto de la Tarjeta</label><input type="number" value={matchHeight} onChange={(e) => setMatchHeight(parseInt(e.target.value) || 100)} className={inputClasses} /></div>
+                  <div><label className="block text-sm text-slate-400 mb-1">Espacio Horizontal</label><input type="number" value={hGap} onChange={(e) => setHGap(parseInt(e.target.value) || 60)} className={inputClasses} /></div>
+                  <div><label className="block text-sm text-slate-400 mb-1">Espacio Vertical</label><input type="number" value={vGap} onChange={(e) => setVGap(parseInt(e.target.value) || 25)} className={inputClasses} /></div>
                 </div>
               </div>
             </motion.div>
