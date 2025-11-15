@@ -8,6 +8,8 @@ import { createRoot } from 'react-dom/client';
 import { match } from 'assert';
 import { NextResponse } from 'next/server';
 import { MongoClient, ServerApiVersion } from 'mongodb';
+import { playSound } from './sound'; // Importar el gestor de sonidos
+
 
 export type Competitor = {
   id: string;
@@ -52,6 +54,8 @@ interface ShareOptions {
   showParticles: boolean;
   showVignette: boolean;
 }
+
+
 
 const Particles: FC<{ isForShare?: boolean; imageWidth: number; imageHeight: number }> = ({ isForShare = false, imageWidth, imageHeight }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -409,7 +413,10 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
             if (prev <= 1) {
               setIsTimerRunning(false);
               setIsTimerExpired(true);
+              playSound("fin")
               setAnimationType('end');
+              
+
               setShowFullScreenAnimation(true);
               setTimeout(() => setShowFullScreenAnimation(false), 4000);
               return 0;
@@ -433,6 +440,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
 
         if (increment > 0) {
           setShowLedA(true);
+          playSound("goal")
           setTimeout(() => setShowLedA(false), 2000);
         }
       } else {
@@ -441,6 +449,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
 
         if (increment > 0) {
           setShowLedB(true);
+          playSound("goal")
           setTimeout(() => setShowLedB(false), 2000);
         }
       }
@@ -458,6 +467,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
 
       onWinnerSelect(roundIndex, matchIndex, winner, competitorAScore, competitorBScore);
       onClose();
+      playSound("winner")
     };
 
     const handleTimerControl = () => {
@@ -470,6 +480,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
         }
         // Mostrar animación de inicio
         setAnimationType('start');
+        playSound("start")
         setShowFullScreenAnimation(true);
         setTimeout(() => setShowFullScreenAnimation(false), 4000);
         setIsTimerRunning(true);
@@ -673,7 +684,7 @@ const MainBracketView: FC<{ rounds: Match[][]; winners: Competitor[][]; champion
                     transition={{ delay: 1, duration: 0.6 }}
                     className="text-2xl md:text-3xl text-white mt-4 font-semibold"
                   >
-                    {animationType === 'start' ? '¡QUE COMIENCE LA PELEA!' : '¡DETENGAN LA PELEA!'}
+                    {animationType === 'start' ? '¡QUE COMIENCE EL PARTIDO!' : '¡DETENGAN EL PARTIDO!'}
                   </motion.p>
                 </motion.div>
               </div>
